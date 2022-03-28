@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'dart:html' as html;
-import 'dart:io';
+import 'dart:typed_data';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:image_picker_web/image_picker_web.dart';
 import 'package:mime/mime.dart';
 
 import '../constants.dart';
@@ -26,13 +27,7 @@ class DriveController extends GetxController {
 
   set driveModel(value) => _driveModel.value = value;
 
-  get driveModel => _driveModel.value;
-
-  final _file = File("").obs;
-
-  set file(value) => _file.value = value;
-
-  get file => _file.value;
+  DriveModel get driveModel => _driveModel.value;
 
   final _driveList = <DriveModel>[].obs;
 
@@ -100,6 +95,8 @@ class DriveController extends GetxController {
   }
 
   getDriveList(String directory) async {
+    print(directory);
+    directory = directory.replaceAll("/", "");
     driveList.clear();
     isLoading = false;
     try {
@@ -125,11 +122,17 @@ class DriveController extends GetxController {
     return parsed.map<DriveModel>((json) => DriveModel.fromJson(json)).toList();
   }
 
-  add() async {
+  add(
+    Uint8List ufile,
+  ) async {
     print(driveModel.fileName);
     print(driveModel.fileType);
     print(driveModel.directory);
-    print(file);
+    Get.dialog(
+        const Center(
+          child: CircularProgressIndicator(),
+        ),
+        barrierDismissible: false);
     try {
       var request = http.MultipartRequest(
           'POST',
@@ -140,9 +143,12 @@ class DriveController extends GetxController {
       request.fields['fileType'] = driveModel.fileType;
       request.fields['directory'] = driveModel.directory;
 
-      request.files
-          .add(await http.MultipartFile.fromPath("driveFile", file.path));
-
+      request.files.add(http.MultipartFile.fromBytes(
+        "driveFile",
+        ufile,
+        contentType: MediaType('application', 'octet-stream'),
+        filename: "userfile",
+      ));
       print(request);
       http.Response response =
           await http.Response.fromStream(await request.send());
@@ -150,6 +156,8 @@ class DriveController extends GetxController {
       if (response.statusCode == 200) {
         if (response.body == "true") {
           Get.back();
+          Get.back();
+          getDriveList(driveModel.directory);
           return true;
         } else {
           return false;
@@ -191,23 +199,16 @@ class DriveController extends GetxController {
           child: CircularProgressIndicator(),
         ),
         barrierDismissible: false);
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.any,
-        allowMultiple: false,
-        onFileLoading: (value) {
-          debugPrint(value.toString());
-        });
+    var mediaData = await ImagePickerWeb.getImageInfo;
     Get.back();
-    print(result!.names);
-    print(result.names[0]!.split(".").last);
+    print(mediaData!.fileName);
     TextEditingController fileNameController = TextEditingController();
-    fileNameController.text = result.names[0]!.split(".").first;
-    file = File(result.files.single.path!);
+    fileNameController.text = mediaData.fileName!;
 
     driveModel = DriveModel(
         directory: "$directory/",
         fileName: fileNameController.text,
-        fileType: result.names[0]!.split(".").last,
+        fileType: mediaData.fileName!,
         id: 0,
         createAt: DateTime.now());
     Get.defaultDialog(
@@ -219,11 +220,13 @@ class DriveController extends GetxController {
         ),
         content: FileUploadDialog(
           fileNameController: fileNameController,
-          fileType: result.names[0]!.split(".").last,
+          fileType: driveModel.fileType,
           directory: directory,
         ),
         confirm: ElevatedButton(
-          onPressed: add,
+          onPressed: () {
+            add(mediaData.data!);
+          },
           child: Text("저장"),
           style: ElevatedButton.styleFrom(primary: kSelectColor),
         ),
@@ -269,7 +272,7 @@ class DriveController extends GetxController {
         ));
   }
 
-  void downloadFile(String url) {
+  void downloadFile(String url) async {
     // html.AnchorElement anchorElement = html.AnchorElement(href: url);
     // anchorElement.download = url;
     // anchorElement.click();

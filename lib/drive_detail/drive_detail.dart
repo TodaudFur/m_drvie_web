@@ -168,13 +168,6 @@ class DriveDetail extends StatelessWidget {
         activeChild: const Icon(CupertinoIcons.xmark),
         children: [
           SpeedDialChild(
-            onTap: () {},
-            child: const Icon(CupertinoIcons.photo_camera_solid),
-            backgroundColor: const Color(0xFF1A4073),
-            foregroundColor: Colors.white,
-            label: '카메라',
-          ),
-          SpeedDialChild(
               child: const Icon(CupertinoIcons.square_arrow_up),
               backgroundColor: const Color(0xFF1A4073),
               foregroundColor: Colors.white,
