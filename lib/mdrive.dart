@@ -2,6 +2,7 @@ import 'package:aligned_dialog/aligned_dialog.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:m_drvie_web/controller/drive_controller.dart';
 
 import 'constants.dart';
 import 'controller/drive_home_controller.dart';
@@ -293,7 +294,12 @@ class MDrive extends StatelessWidget {
                               flex: 5,
                               child: InkWell(
                                 onTap: () {
-                                  Get.toNamed("/driveDetail", arguments: "광고");
+                                  if (driveHomeController.isLogin) {
+                                    Get.toNamed("/driveDetail",
+                                        arguments: "광고");
+                                  } else {
+                                    Get.toNamed('/');
+                                  }
                                 },
                                 child: AspectRatio(
                                   aspectRatio: 1 / 1,
@@ -431,7 +437,12 @@ class MDrive extends StatelessWidget {
                                         itemBuilder:
                                             (BuildContext context, int index) {
                                           return InkWell(
-                                            onTap: () {},
+                                            onTap: () {
+                                              final driveController =
+                                                  Get.put(DriveController());
+                                              driveController.downloadFile(
+                                                  "https://official-emmaus.com/g5/bbs/drive/${driveHomeController.recentFiles[index].totalDirectory}/${driveHomeController.recentFiles[index].fileName}.${driveHomeController.recentFiles[index].fileType}");
+                                            },
                                             child: Container(
                                               margin: const EdgeInsets.only(
                                                   bottom: 5),

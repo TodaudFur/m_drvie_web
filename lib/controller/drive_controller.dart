@@ -20,7 +20,8 @@ class DriveController extends GetxController {
           fileName: "",
           fileType: "",
           id: 0,
-          createAt: DateTime.now())
+          createAt: DateTime.now(),
+          totalDirectory: '')
       .obs;
 
   set driveModel(value) => _driveModel.value = value;
@@ -268,7 +269,8 @@ class DriveController extends GetxController {
         fileName: fileNameController.text,
         fileType: result.files.first.name.split(".")[1],
         id: 0,
-        createAt: DateTime.now());
+        createAt: DateTime.now(),
+        totalDirectory: '');
     Get.defaultDialog(
         title: "파일 업로드",
         titleStyle: TextStyle(
@@ -304,7 +306,8 @@ class DriveController extends GetxController {
         fileName: folderNameController.text,
         fileType: 'folder',
         id: 0,
-        createAt: DateTime.now());
+        createAt: DateTime.now(),
+        totalDirectory: '');
     Get.defaultDialog(
         title: "폴더 생성",
         titleStyle: TextStyle(

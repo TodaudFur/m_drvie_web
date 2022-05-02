@@ -9,9 +9,12 @@ import '../constants.dart';
 class DriveDetail extends StatelessWidget {
   DriveDetail({Key? key}) : super(key: key);
   final driveController = Get.put(DriveController());
-  final String title = Get.arguments!;
+  final String title = Get.arguments ?? "";
   @override
   Widget build(BuildContext context) {
+    if (title == "") {
+      Get.toNamed('/drive');
+    }
     driveController.getDriveList(title);
     driveController.addDirectory(title);
     driveController.directoryName = title;
@@ -122,10 +125,8 @@ class DriveDetail extends StatelessWidget {
                                     driveController.getDriveList(driveController
                                         .driveList[index].fileName);
                                   } else {
-                                    String path =
-                                        driveController.directoryList.join("/");
                                     driveController.downloadFile(
-                                        "https://official-emmaus.com/g5/bbs/drive/$path/${driveController.driveList[index].fileName}.${driveController.driveList[index].fileType}");
+                                        "https://official-emmaus.com/g5/bbs/drive/${driveController.driveList[index].totalDirectory}/${driveController.driveList[index].fileName}.${driveController.driveList[index].fileType}");
                                   }
                                 },
                                 onLongPress: () {
