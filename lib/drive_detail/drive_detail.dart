@@ -7,12 +7,14 @@ import '../../controller/drive_controller.dart';
 import '../constants.dart';
 
 class DriveDetail extends StatelessWidget {
-  DriveDetail({Key? key, required this.title}) : super(key: key);
+  DriveDetail({Key? key}) : super(key: key);
   final driveController = Get.put(DriveController());
-  final String title;
+  final String title = Get.arguments!;
   @override
   Widget build(BuildContext context) {
     driveController.getDriveList(title);
+    driveController.addDirectory(title);
+    driveController.directoryName = title;
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -28,19 +30,26 @@ class DriveDetail extends StatelessWidget {
                   children: [
                     InkWell(
                         onTap: () {
-                          Get.back();
+                          if (driveController.directoryList.length <= 1) {
+                            driveController.deleteDirectory();
+                            Get.back();
+                          } else {
+                            driveController.deleteDirectory();
+                          }
                         },
                         child: const Icon(CupertinoIcons.arrow_left)),
                     const SizedBox(
                       width: 15,
                     ),
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontFamily: "Nanum",
-                        fontWeight: FontWeight.w900,
+                    Obx(
+                      () => Text(
+                        driveController.directoryName,
+                        style: const TextStyle(
+                          fontFamily: "Nanum",
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
-                    ),
+                    )
                   ],
                 ),
                 Row(
@@ -105,12 +114,29 @@ class DriveDetail extends StatelessWidget {
                                       'folder') {
                                     print(driveController
                                         .driveList[index].fileName);
+                                    driveController.addDirectory(driveController
+                                        .driveList[index].fileName);
+                                    driveController.directoryName =
+                                        driveController
+                                            .driveList[index].fileName;
                                     driveController.getDriveList(driveController
                                         .driveList[index].fileName);
                                   } else {
+                                    String path =
+                                        driveController.directoryList.join("/");
                                     driveController.downloadFile(
-                                        "https://official-emmaus.com/g5/bbs/drive/${driveController.driveList[index].directory}${driveController.driveList[index].fileName}.${driveController.driveList[index].fileType}");
+                                        "https://official-emmaus.com/g5/bbs/drive/$path/${driveController.driveList[index].fileName}.${driveController.driveList[index].fileType}");
                                   }
+                                },
+                                onLongPress: () {
+                                  Get.defaultDialog(
+                                    title: "파일 삭제",
+                                    content: Text("파일(폴더)를 삭제하시겠습니까?"),
+                                    textConfirm: "삭제",
+                                    onConfirm: () {
+                                      driveController.removeFile(index);
+                                    },
+                                  );
                                 },
                                 child: Container(
                                   margin: const EdgeInsets.only(bottom: 5),
@@ -173,7 +199,7 @@ class DriveDetail extends StatelessWidget {
               foregroundColor: Colors.white,
               label: '업로드',
               onTap: () {
-                driveController.fileSave(title);
+                driveController.fileSave(driveController.directoryName);
               }),
           SpeedDialChild(
             child: const Icon(CupertinoIcons.folder_solid),
@@ -181,7 +207,7 @@ class DriveDetail extends StatelessWidget {
             foregroundColor: Colors.white,
             label: '폴더',
             onTap: () {
-              driveController.folderSave(title);
+              driveController.folderSave(driveController.directoryName);
             },
           ),
         ],

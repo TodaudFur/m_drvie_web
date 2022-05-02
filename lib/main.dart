@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:m_drvie_web/drive_detail/drive_detail.dart';
+import 'package:m_drvie_web/login.dart';
 import 'package:m_drvie_web/mdrive.dart';
 
 void main() {
@@ -17,7 +19,12 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MDrive(),
+      initialRoute: '/',
+      getPages: [
+        GetPage(name: '/', page: () => const LoginPage()),
+        GetPage(name: '/drive', page: () => MDrive()),
+        GetPage(name: '/driveDetail', page: () => DriveDetail()),
+      ],
     );
   }
 }

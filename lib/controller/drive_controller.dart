@@ -2,19 +2,17 @@ import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:typed_data';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
-import 'package:image_picker_web/image_picker_web.dart';
 import 'package:mime/mime.dart';
 
 import '../constants.dart';
 import '../data/model/drive_model.dart';
 import '../drive_detail/widget/file_upload_dialog.dart';
 import '../drive_detail/widget/folder_upload_dialog.dart';
-
-const baseUrl = 'https://official-emmaus.com/g5/bbs';
 
 class DriveController extends GetxController {
   final _driveModel = DriveModel(
@@ -41,6 +39,59 @@ class DriveController extends GetxController {
 
   set isLoading(val) => _isLoading.value = val;
 
+  final _directoryList = <String>[].obs;
+  List<String> get directoryList => _directoryList;
+  set directoryList(val) => _directoryList.value = val;
+
+  final _directoryName = "".obs;
+  get directoryName => _directoryName.value;
+  set directoryName(val) => _directoryName.value = val;
+
+  Future<bool> removeFile(int index) async {
+    String path = directoryList.join("/");
+    print(path);
+    try {
+      print(
+          "./drive/$path/${driveList[index].fileName}.${driveList[index].fileType}");
+      print(driveList[index].id);
+      var url = Uri.parse('$kBaseUrl/emmaus_drive_remove.php');
+      var result = await http.post(url, body: {
+        "path": "./drive/$path/${driveList[index].fileName}",
+        "type": driveList[index].fileType,
+        "id": driveList[index].id.toString(),
+      });
+
+      print(result.body);
+      if (result.body == "true") {
+        Get.back();
+        print("directory : ${directoryList.last}");
+        getDriveList(directoryList.last);
+        return true;
+      }
+    } catch (_) {
+      print('exception : $_');
+      return false;
+    }
+    return false;
+  }
+
+  addDirectory(String directory) {
+    directoryList.add(directory);
+    print(directoryList);
+  }
+
+  deleteDirectory() {
+    directoryList.removeLast();
+    _directoryList.refresh();
+    print("list : $directoryList");
+
+    if (directoryList.isNotEmpty) {
+      print("fileName : ${directoryList.last}");
+      directoryName = directoryList.last;
+      getDriveList(directoryList.last);
+    }
+  }
+
   Widget getFileImage(String fileType) {
     if (fileType == 'folder') {
       return Image.asset(
@@ -48,7 +99,7 @@ class DriveController extends GetxController {
         width: 30,
       );
     } else {
-      final mimeType = lookupMimeType(fileType);
+      final mimeType = lookupMimeType(".$fileType");
       print(mimeType);
       switch (mimeType!.split("/").first) {
         case "image":
@@ -71,6 +122,7 @@ class DriveController extends GetxController {
         case "application":
           switch (mimeType.split("/").last) {
             case "vnd.ms-excel":
+            case "vnd.openxmlformats-officedocument.spreadsheetml.sheet":
               return const Text(
                 "XLS",
                 style: TextStyle(color: Color(0xFF0A783F)),
@@ -102,9 +154,8 @@ class DriveController extends GetxController {
     try {
       var map = <String, dynamic>{};
       map['directory'] = "$directory/";
-      final response = await http.post(
-          Uri.parse('https://official-emmaus.com/g5/bbs/emmaus_drive_list.php'),
-          body: map);
+      final response = await http
+          .post(Uri.parse('$kBaseUrl/emmaus_drive_list.php'), body: map);
       print("Get Drive List Response : ${response.body}");
       if (response.statusCode == 200) {
         driveList = parseResponse(response.body);
@@ -133,15 +184,17 @@ class DriveController extends GetxController {
           child: CircularProgressIndicator(),
         ),
         barrierDismissible: false);
+    print(directoryList.join("/"));
     try {
       var request = http.MultipartRequest(
-          'POST',
-          Uri.parse(
-              "https://www.official-emmaus.com/g5/bbs/emmaus_drive_add.php"));
-      print("https://official-emmaus.com/g5/bbs/emmaus_drive_add.php");
+          'POST', Uri.parse("$kBaseUrl/emmaus_drive_add.php"));
+      print(directoryList.first);
+      print("$kBaseUrl/emmaus_drive_add.php");
       request.fields['fileName'] = driveModel.fileName;
       request.fields['fileType'] = driveModel.fileType;
-      request.fields['directory'] = driveModel.directory;
+      request.fields['directory'] = directoryList.join("/") + "/";
+      request.fields['currentFolder'] = driveModel.directory;
+      request.fields['mainDirectory'] = directoryList.first;
 
       request.files.add(http.MultipartFile.fromBytes(
         "driveFile",
@@ -174,17 +227,19 @@ class DriveController extends GetxController {
 
   Future addFolder() async {
     print(driveModel.fileName);
+    print(directoryList.join("/"));
     try {
-      var url = Uri.parse(
-          'https://official-emmaus.com/g5/bbs/emmaus_drive_add_folder.php');
+      var url = Uri.parse('$kBaseUrl/emmaus_drive_add_folder.php');
       var result = await http.post(url, body: {
         "name": driveModel.fileName,
-        "directory": driveModel.directory
+        "directory": directoryList.join("/") + "/",
+        "currentFolder": driveModel.directory,
       });
 
       print(result.body);
       if (result.body == "true") {
         Get.back();
+        getDriveList(driveModel.directory);
         return true;
       }
     } catch (_) {
@@ -199,16 +254,19 @@ class DriveController extends GetxController {
           child: CircularProgressIndicator(),
         ),
         barrierDismissible: false);
-    var mediaData = await ImagePickerWeb.getImageInfo;
+    FilePickerResult? result =
+        await FilePicker.platform.pickFiles(allowMultiple: false);
+    Uint8List mediaData = result!.files.first.bytes!;
+    //var mediaData = await ImagePickerWeb.getImageInfo;
     Get.back();
-    print(mediaData!.fileName);
+    print(result.files.first.name);
     TextEditingController fileNameController = TextEditingController();
-    fileNameController.text = mediaData.fileName!;
+    fileNameController.text = result.files.first.name.split(".")[0];
 
     driveModel = DriveModel(
         directory: "$directory/",
         fileName: fileNameController.text,
-        fileType: mediaData.fileName!,
+        fileType: result.files.first.name.split(".")[1],
         id: 0,
         createAt: DateTime.now());
     Get.defaultDialog(
@@ -225,7 +283,7 @@ class DriveController extends GetxController {
         ),
         confirm: ElevatedButton(
           onPressed: () {
-            add(mediaData.data!);
+            add(mediaData);
           },
           child: Text("저장"),
           style: ElevatedButton.styleFrom(primary: kSelectColor),
