@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:m_drvie_web/drive_detail/drive_detail.dart';
 import 'package:m_drvie_web/login.dart';
 import 'package:m_drvie_web/mdrive.dart';
+import 'package:m_drvie_web/worship_detail.dart';
 
 void main() {
   runApp(const MyApp());
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       getPages: [
         GetPage(name: '/', page: () => const LoginPage()),
+        GetPage(name: '/worship', page: () => const WorshipDetail()),
         GetPage(name: '/drive', page: () => MDrive()),
         GetPage(name: '/driveDetail', page: () => DriveDetail()),
       ],

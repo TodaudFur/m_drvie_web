@@ -166,8 +166,7 @@ class MDrive extends StatelessWidget {
                               child: InkWell(
                                 onTap: () {
                                   if (driveHomeController.isLogin) {
-                                    Get.toNamed("/driveDetail",
-                                        arguments: "예배");
+                                    Get.toNamed('/worship');
                                   } else {
                                     Get.toNamed('/');
                                   }
@@ -417,6 +416,7 @@ class MDrive extends StatelessWidget {
                           children: [
                             SizedBox(
                               height: 30,
+                              width: Get.width,
                             ),
                             Text(
                               "최근 7일이내 업로드 파일",
